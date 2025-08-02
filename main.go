@@ -28,22 +28,78 @@ func main() {
 
 	l := lexer.NewLexer(filename, string(file))
 
-	for {
-		t, parseErr := l.ConsumeToken()
-		if parseErr != nil {
-			fmt.Fprintln(os.Stderr, parseErr)
-			os.Exit(1)
-			return
-		}
-
-		fmt.Printf(
-			"(%d) %s\n",
-			t.Kind,
-			t.Start.FileInfo.Contents[t.Start.Cursor:t.End.Cursor],
-		)
-
-		if t.Kind == token.TOKEN_END_OF_FILE {
-			break
-		}
+	_, perr := l.ExpectIdentifier("int")
+	if perr != nil {
+		fmt.Fprintln(os.Stderr, perr)
+		os.Exit(1)
+		return
 	}
+	_, perr = l.ExpectIdentifier("main")
+	if perr != nil {
+		fmt.Fprintln(os.Stderr, perr)
+		os.Exit(1)
+		return
+	}
+	_, perr = l.ExpectSymbol("(")
+	if perr != nil {
+		fmt.Fprintln(os.Stderr, perr)
+		os.Exit(1)
+		return
+	}
+	_, perr = l.ExpectIdentifier("void")
+	if perr != nil {
+		fmt.Fprintln(os.Stderr, perr)
+		os.Exit(1)
+		return
+	}
+	_, perr = l.ExpectSymbol(")")
+	if perr != nil {
+		fmt.Fprintln(os.Stderr, perr)
+		os.Exit(1)
+		return
+	}
+	_, perr = l.ExpectSymbol("{")
+	if perr != nil {
+		fmt.Fprintln(os.Stderr, perr)
+		os.Exit(1)
+		return
+	}
+	_, perr = l.ExpectIdentifier("return")
+	if perr != nil {
+		fmt.Fprintln(os.Stderr, perr)
+		os.Exit(1)
+		return
+	}
+	t, perr := l.ExpectTokenKind(token.TOKEN_NUMBER_LITERAL)
+	if perr != nil {
+		fmt.Fprintln(os.Stderr, perr)
+		os.Exit(1)
+		return
+	}
+	_, perr = l.ExpectSymbol(";")
+	if perr != nil {
+		fmt.Fprintln(os.Stderr, perr)
+		os.Exit(1)
+		return
+	}
+	_, perr = l.ExpectSymbol("}")
+	if perr != nil {
+		fmt.Fprintln(os.Stderr, perr)
+		os.Exit(1)
+		return
+	}
+	_, perr = l.ExpectTokenKind(token.TOKEN_END_OF_FILE)
+	if perr != nil {
+		fmt.Fprintln(os.Stderr, perr)
+		os.Exit(1)
+		return
+	}
+
+	value := l.TokenValue(t)
+	fmt.Println("\t.globl\t_main")
+	fmt.Println("_main:")
+	fmt.Println("\t.cfi_startproc")
+	fmt.Printf("\tmov\tw0, #%s\n", value)
+	fmt.Println("\tret")
+	fmt.Println("\t.cfi_endproc")
 }

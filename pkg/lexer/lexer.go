@@ -31,6 +31,10 @@ type Lexer struct {
 	fileInfo location.FileInfo
 }
 
+type LexerSnapshot struct {
+	cursor int
+}
+
 func NewLexer(fileName, contents string) *Lexer {
 	return &Lexer{cursor: 0, fileInfo: location.FileInfo{FileName: fileName, Contents: contents}}
 }
@@ -39,8 +43,12 @@ func (l *Lexer) location() location.Location {
 	return location.Location{Cursor: l.cursor, FileInfo: l.fileInfo}
 }
 
-func (l *Lexer) todo(s string) *ParseError {
-	return NewParseError(l.location(), fmt.Errorf("TODO: %s", s))
+func (l *Lexer) todo(s string, location *location.Location) *ParseError {
+	if location == nil {
+		loc := l.location()
+		location = &loc
+	}
+	return NewParseError(*location, fmt.Errorf("TODO: %s", s))
 }
 
 func (l *Lexer) peekCharacter() (c rune, eof bool) {
@@ -53,6 +61,14 @@ func (l *Lexer) peekCharacter() (c rune, eof bool) {
 
 func (l *Lexer) consumeCharacter() {
 	l.cursor++
+}
+
+func (l *Lexer) SaveSnapshot() LexerSnapshot {
+	return LexerSnapshot{cursor: l.cursor}
+}
+
+func (l *Lexer) RestoreSnapshot(snap LexerSnapshot) {
+	l.cursor = snap.cursor
 }
 
 func (l *Lexer) ConsumeToken() (*token.Token, *ParseError) {
@@ -132,7 +148,7 @@ func (l *Lexer) ConsumeToken() (*token.Token, *ParseError) {
 					}
 				}
 			}
-			return nil, l.todo("Multi line comment")
+			return nil, l.todo("Multi line comment", nil)
 		}
 
 		// Symbols which can only appear on their own
@@ -276,6 +292,49 @@ func (l *Lexer) ConsumeToken() (*token.Token, *ParseError) {
 			}
 		}
 
-		return nil, l.todo("ConsumeToken")
+		return nil, l.todo("ConsumeToken", nil)
 	}
+}
+
+func (l *Lexer) TokenValue(t *token.Token) string {
+	return l.fileInfo.Contents[t.Start.Cursor:t.End.Cursor]
+}
+
+func (l *Lexer) ExpectTokenKind(kind token.TokenKind) (*token.Token, *ParseError) {
+	t, err := l.ConsumeToken()
+	if err != nil {
+		return nil, err
+	}
+
+	if t.Kind != kind {
+		return nil, l.todo("unexpected kind error", &t.Start)
+	}
+
+	return t, nil
+}
+
+func (l *Lexer) ExpectSymbol(symbol string) (*token.Token, *ParseError) {
+	t, err := l.ExpectTokenKind(token.TOKEN_SYMBOL)
+	if err != nil {
+		return nil, err
+	}
+
+	if l.TokenValue(t) != symbol {
+		return nil, l.todo("unexpected symbol error", &t.Start)
+	}
+
+	return t, nil
+}
+
+func (l *Lexer) ExpectIdentifier(identifier string) (*token.Token, *ParseError) {
+	t, err := l.ExpectTokenKind(token.TOKEN_IDENTIFIER)
+	if err != nil {
+		return nil, err
+	}
+
+	if l.TokenValue(t) != identifier {
+		return nil, l.todo("unexpected identifier error", &t.Start)
+	}
+
+	return t, nil
 }
