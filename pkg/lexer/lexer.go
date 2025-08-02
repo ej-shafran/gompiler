@@ -70,6 +70,49 @@ func (l *Lexer) ConsumeToken() (*token.Token, *ParseError) {
 			continue
 		}
 
+		// Comments
+		if c == '/' {
+			c2, eof := l.peekCharacter()
+			if eof {
+				return nil, NewParseError(l.location(), UNEXPECTED_END_OF_FILE)
+			}
+
+			// Single-line
+			if c2 == '/' {
+				l.consumeCharacter()
+				for {
+					c2, eof = l.peekCharacter()
+					l.consumeCharacter()
+
+					if c2 == '\n' {
+						return token.NewToken(token.TOKEN_SINGLE_LINE_COMMENT, start, l.location()), nil
+					}
+				}
+			}
+
+			// Multi-line
+			if c2 == '*' {
+				l.consumeCharacter()
+
+				lastStar := false
+				for {
+					c2, eof = l.peekCharacter()
+					if eof {
+						return nil, NewParseError(l.location(), UNEXPECTED_END_OF_FILE)
+					}
+
+					l.consumeCharacter()
+
+					if lastStar && c2 == '/' {
+						return token.NewToken(token.TOKEN_MULTI_LINE_COMMENT, start, l.location()), nil
+					} else {
+						lastStar = c2 == '*'
+					}
+				}
+			}
+			return nil, l.todo("Multi line comment")
+		}
+
 		// Symbols which can only appear on their own
 		if c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' || c == ';' || c == ',' || c == '.' {
 			return token.NewToken(token.TOKEN_SYMBOL, start, l.location()), nil
