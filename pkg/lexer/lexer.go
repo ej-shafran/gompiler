@@ -152,7 +152,6 @@ func (l *Lexer) ConsumeToken() (*token.Token, *ParseError) {
 					}
 				}
 			}
-			return nil, l.todo("Multi line comment", nil)
 		}
 
 		// Symbols which can only appear on their own
