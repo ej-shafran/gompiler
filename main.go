@@ -37,7 +37,8 @@ func main() {
 		}
 
 		fmt.Printf(
-			"%s\n",
+			"(%d) %s\n",
+			t.Kind,
 			t.Start.FileInfo.Contents[t.Start.Cursor:t.End.Cursor],
 		)
 

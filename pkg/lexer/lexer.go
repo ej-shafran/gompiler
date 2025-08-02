@@ -24,6 +24,7 @@ func NewParseError(location location.Location, err error) *ParseError {
 }
 
 var UNEXPECTED_END_OF_FILE = errors.New("Unexpected end of file")
+var EXPECTED_EXPERSSION = errors.New("Expected experssion")
 
 type Lexer struct {
 	cursor   int
@@ -129,6 +130,38 @@ func (l *Lexer) ConsumeToken() (*token.Token, *ParseError) {
 			}
 
 			return token.NewToken(token.TOKEN_SYMBOL, start, l.location()), nil
+		}
+
+		// Double/single quotes
+		if c == '"' || c == '\'' {
+			escaping := false
+
+			for {
+				c2, eof := l.peekCharacter()
+				if eof {
+					return nil, NewParseError(l.location(), UNEXPECTED_END_OF_FILE)
+				}
+
+				l.consumeCharacter()
+
+				if escaping {
+					escaping = false
+					continue
+				} else {
+					escaping = c2 == '\\'
+				}
+
+				if c2 == c {
+					var kind token.TokenKind
+					if c == '"' {
+						kind = token.TOKEN_QUOTED_STRING
+					} else {
+						kind = token.TOKEN_QUOTED_CHARACTER
+					}
+
+					return token.NewToken(kind, start, l.location()), nil
+				}
+			}
 		}
 
 		return nil, l.todo("ConsumeToken")
