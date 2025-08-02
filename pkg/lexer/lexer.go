@@ -259,14 +259,14 @@ func (l *Lexer) ConsumeToken() (*token.Token, *ParseError) {
 		}
 
 		// Identifiers
-		if unicode.IsLetter(c) {
+		if unicode.IsLetter(c) || c == '_' {
 			for {
 				c, eof = l.peekCharacter()
 				if eof {
 					return nil, NewParseError(l.location(), UNEXPECTED_END_OF_FILE)
 				}
 
-				if unicode.IsLetter(c) || unicode.IsDigit(c) {
+				if unicode.IsLetter(c) || unicode.IsDigit(c) || c == '_' {
 					l.consumeCharacter()
 					continue
 				}
