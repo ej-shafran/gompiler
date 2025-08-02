@@ -164,6 +164,35 @@ func (l *Lexer) ConsumeToken() (*token.Token, *ParseError) {
 			}
 		}
 
+		// Number literals
+		if unicode.IsDigit(c) {
+			// `0x` and `0b` prefixes
+			if c == '0' {
+				c, eof = l.peekCharacter()
+				if eof {
+					return nil, NewParseError(l.location(), UNEXPECTED_END_OF_FILE)
+				}
+
+				if c == 'x' || c == 'b' {
+					l.consumeCharacter()
+				}
+			}
+
+			for {
+				c, eof = l.peekCharacter()
+				if eof {
+					return nil, NewParseError(l.location(), UNEXPECTED_END_OF_FILE)
+				}
+
+				if c == '.' || unicode.IsDigit(c) {
+					l.consumeCharacter()
+					continue
+				}
+
+				return token.NewToken(token.TOKEN_NUMBER_LITERAL, start, l.location()), nil
+			}
+		}
+
 		return nil, l.todo("ConsumeToken")
 	}
 }
