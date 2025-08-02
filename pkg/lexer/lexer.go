@@ -193,6 +193,24 @@ func (l *Lexer) ConsumeToken() (*token.Token, *ParseError) {
 			}
 		}
 
+		// Identifiers
+		if unicode.IsLetter(c) {
+			for {
+				c, eof = l.peekCharacter()
+				if eof {
+					return nil, NewParseError(l.location(), UNEXPECTED_END_OF_FILE)
+				}
+
+				if unicode.IsLetter(c) || unicode.IsDigit(c) {
+					l.consumeCharacter()
+					continue
+				}
+
+				// TODO: logic for builtin keywords?
+				return token.NewToken(token.TOKEN_IDENTIFIER, start, l.location()), nil
+			}
+		}
+
 		return nil, l.todo("ConsumeToken")
 	}
 }
