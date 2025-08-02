@@ -120,6 +120,10 @@ func (l *Lexer) ConsumeToken() (*token.Token, *ParseError) {
 				l.consumeCharacter()
 				for {
 					c2, eof = l.peekCharacter()
+					if eof {
+						return nil, NewParseError(l.location(), UNEXPECTED_END_OF_FILE)
+					}
+
 					l.consumeCharacter()
 
 					if c2 == '\n' {
