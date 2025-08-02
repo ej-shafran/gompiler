@@ -36,15 +36,9 @@ func main() {
 			return
 		}
 
-		line, startOffset := t.Start.LineAndOffset()
-		_, endOffset := t.End.LineAndOffset()
 		fmt.Printf(
-			"%s:%d:%d-%d: %d",
-			t.Start.FileInfo.FileName,
-			line,
-			startOffset,
-			endOffset,
-			t.Kind,
+			"%s\n",
+			t.Start.FileInfo.Contents[t.Start.Cursor:t.End.Cursor],
 		)
 
 		if t.Kind == token.TOKEN_END_OF_FILE {
