@@ -70,6 +70,28 @@ func (l *Lexer) ConsumeToken() (*token.Token, *ParseError) {
 			continue
 		}
 
+		// Macros
+		if c == '#' {
+			escaping := false
+			for {
+				c, eof = l.peekCharacter()
+				if eof {
+					return nil, NewParseError(l.location(), UNEXPECTED_END_OF_FILE)
+				}
+
+				l.consumeCharacter()
+
+				if escaping {
+					escaping = false
+					continue
+				} else if c != '\n' {
+					escaping = c == '\\'
+				} else {
+					return token.NewToken(token.TOKEN_MACRO, start, l.location()), nil
+				}
+			}
+		}
+
 		// Comments
 		if c == '/' {
 			c2, eof := l.peekCharacter()
